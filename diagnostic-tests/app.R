@@ -9,6 +9,8 @@
 
 library(shiny)
 
+library(ggplot2)
+
 # Define UI for application that draws a histogram
 ui <- fluidPage(
    
@@ -20,11 +22,11 @@ ui <- fluidPage(
       sidebarPanel(
          sliderInput("cutoff",
                      "Diagnostic cutoff:",
-                     min = 1,
+                     min = 2,
                      max = 10,
                      value = 1, 
                      step=0.1, 
-                     animate=animationOptions(interval=500))
+                     animate=animationOptions(interval=750))
       ),
       
       # Show a plot of the generated distribution
@@ -38,56 +40,62 @@ ui <- fluidPage(
 server <- function(input, output) {
    
   sensitivity = function(dat, group, cut){
-    mean(dat[group==1] >= cut)
+    mean(dat[group=='Sick'] >= cut)
   }
   
   specificity = function(dat, group, cut){
-    mean(dat[group==0] < cut)
+    mean(dat[group=='Healthy'] < cut)
   }
   
   grp = rep(0:1, each=50)
-  y = rnorm(n=100, mean=5+2*grp, sd=1)
+  set.seed(2)
+  marker = rnorm(n=100, mean=5+2*grp, sd=1)
+  grp = ifelse(grp==1, 'Sick', 'Healthy')
+  biom = data.frame(grp, marker)
+
+  roc_steps = seq(floor(min(marker)), ceiling(max(marker)), by=0.001)
   
-  roc_range = c(floor(min(y)), ceiling(max(y)))
-  roc_steps = seq(roc_range[1], roc_range[2], by=0.01)
+  roc = data.frame(
+    sens = sapply(roc_steps, function(x) sensitivity(dat=biom$marker, 
+                                                     group=biom$grp, cut=x)), 
+    spec = sapply(roc_steps, function(x) specificity(dat=biom$marker, 
+                                                     group=biom$grp, cut=x)))
   
   output$distPlot <- renderPlot({
     
-    par(mfrow=c(1,2))
+    biom$`Test decision` = factor(ifelse(biom$marker>input$cutoff, 'Positive', 'Negative'), 
+                                  levels=c('Positive', 'Negative'))
     
     set.seed(1)
-    plot(jitter(grp), y, col=ifelse(y<input$cutoff, 'steelblue', 'darkred'), 
-         xaxt='n', xlab=paste('Specificity:', specificity(y, grp, input$cutoff), 
-                              '; Sensitivity:', sensitivity(y, grp, input$cutoff)), 
-         ylab='Biomarker expression', 
-         main='Biomarker scatterplot', 
-         frame=FALSE)
-    axis(side=1, at=0:1, lwd=0, labels=c('True\nHealthy', 'True\nDiseased'))
-    text(x=rep(0.5,2), y=c(min(4,input$cutoff), max(8,input$cutoff)),
-         pos=c(1,3), 
-         labels=c('Test\nNegative', 'Test\nPositive'), 
-         col=c('steelblue','darkred'), xpd=TRUE)
-    abline(h=input$cutoff, col='red', lty=2, lwd=2, xpd=TRUE)
+    p1 = ggplot(data=biom, aes(x=grp, y=marker, color=`Test decision`)) + 
+      geom_jitter(width=0.2, alpha=0.5) + 
+      geom_hline(yintercept=input$cutoff, color='red', linetype=2) + 
+      ggtitle('Biomarker scatterplot') + 
+      xlab('Patient condition') +
+      ylab('Biomarker expression') + 
+      ylim(2,10) + 
+      theme_minimal() + 
+      theme(legend.position="top")
     
     
-    roc_curve = sapply(roc_steps, function(ct){
-      sens = sensitivity(dat=y, group=grp, cut=ct)
-      spec = specificity(dat=y, group=grp, cut=ct)
-      ret = c(sens, spec)
-      return(ret)
-    })
+    # ROC curve
     
-    plot(x=1-roc_curve[2, ], y=roc_curve[1, ], type='s', 
-         xaxt='n', xlab='Specificity', 
-         ylab='Sensitivity', 
-         main='ROC curve', 
-         frame=FALSE)
-    axis(side=1, at=seq(0,1,0.2), labels=seq(1,0,-0.2))
-    abline(a=0, b=1, col='grey')
+    p2 = ggplot(data=roc, aes(x=spec, y=sens)) + 
+      geom_path() + 
+      scale_x_reverse() + 
+      annotate(x=specificity(dat=biom$marker, 
+                             group=biom$grp, cut=input$cutoff), 
+               y=sensitivity(dat=biom$marker, 
+                             group=biom$grp, cut=input$cutoff), 
+               geom='point', pch='X', color='red', size=7, alpha=0.5) + 
+      ggtitle('ROC curve') + 
+      xlab('Specificity (scale reversed)') + 
+      ylab('Sensitivity') + 
+      theme_minimal()
     
-    m = which(roc_steps == input$cutoff)
-    points(x=1-roc_curve[2, m], y=roc_curve[1, m], col='red', pch='X', cex=1.5)
     
+    p3 = gridExtra::grid.arrange(p1, p2, ncol=2)
+    p3
     
   })
 }
