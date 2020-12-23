@@ -53,7 +53,7 @@ server = function(input, output){
     
     myplot
     
-  }, height = 600, width = 650)
+  })
   
 }
 

@@ -34,7 +34,7 @@ server = function(input, output){
       scale_y_continuous(breaks=NULL) + 
       theme_minimal()
     
-  }, height = 600, width = 650)
+  })
   
 }
 

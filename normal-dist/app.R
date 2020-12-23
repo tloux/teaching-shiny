@@ -41,6 +41,7 @@ server <- function(input, output) {
          stat_function(fun=dnorm, args=list(mean=input$mu,sd=input$sig), 
                        col='navy', size=2, n=1600, xlim=c(input$mu-4*input$sig, input$mu+4*input$sig)) + 
          xlim(c(-8,8)) + 
+         ylab('') + 
          ylim(c(0,0.8)) + 
          theme_minimal()
       
