@@ -3,16 +3,17 @@ library(shiny)
 
 ui = fluidPage(
   
-  titlePanel('One-way ANOVA'),
+  titlePanel('One-way ANOVA sums of squares'),
   
   sidebarLayout(
     sidebarPanel(
+      checkboxInput('showcis', 'Show 95% confidence intervals', value=FALSE), 
       sliderInput('ssb', 'SSB:',
-                  value=0, min=0, max=30, step=0.5,
-                  animate=animationOptions(interval=400,loop=FALSE)),
+                  value=0, min=0, max=30, step=1,
+                  animate=animationOptions(interval=1000,loop=FALSE)),
       sliderInput('sse', 'SSW (SSE):',
                   value=50, min=1, max=150, step=1,
-                  animate=animationOptions(interval=200,loop=FALSE))
+                  animate=animationOptions(interval=1000,loop=FALSE))
     ),
     
     mainPanel(
@@ -51,31 +52,44 @@ server = function(input, output){
     
     mydat = data.frame(grp, plot_grp, y)
     
-    get_ci = function(x){
-      c(mean(x), t.test(x)$conf.int)
-    }
-    
-    mycis = aggregate(y~grp, data=mydat, FUN=get_ci)
-    
-    mycis = data.frame(grp=mycis$grp, est=mycis$y[, 1], 
-                       lo=mycis$y[, 2], hi=mycis$y[, 3])
-    
     
     # scatterplot
     
     ggscatter = ggplot(data=mydat, aes(x=plot_grp, y=y)) +
       geom_point(size=3, alpha=0.2) +
       geom_hline(yintercept=mean(mydat$y), col='blue', linetype=2) +
-
-      geom_point(data=mycis, aes(x=grp, y=est), color='steelblue', size=2) +
-      geom_errorbar(data=mycis, aes(x=grp, y=est, ymin=lo, ymax=hi),
-                      color='steelblue', width=0.1, size=1) +
-
       xlab('Group') +
       ylab('Outcome') +
       ylim(c(5,15)) +
       ggtitle('Raw data') +
       theme_minimal()
+    
+    if(input$showcis){
+
+      get_ci = function(x){
+        c(mean(x), t.test(x)$conf.int)
+      }
+      
+      mycis = aggregate(y~grp, data=mydat, FUN=get_ci)
+      mycis = data.frame(grp=mycis$grp, est=mycis$y[, 1], 
+                         lo=mycis$y[, 2], hi=mycis$y[, 3])
+      
+      ggscatter = ggscatter + 
+        geom_point(data=mycis, aes(x=grp, y=est), color='steelblue', size=2) +
+        geom_errorbar(data=mycis, aes(x=grp, y=est, ymin=lo, ymax=hi),
+                      color='steelblue', width=0.1, size=1)
+    }else{
+      
+      grpmeans = aggregate(y~grp, data=mydat, FUN=mean)
+      grpmeans$xstart = grpmeans$grp - 0.2
+      grpmeans$xend = grpmeans$grp + 0.2
+      
+      ggscatter = ggscatter + 
+        geom_linerange(data=grpmeans, aes(y=y, x=grp, xmin=xstart, xmax=xend), 
+                       col='steelblue', size=1)
+        
+      
+    }
 
     
     # F distribution curve with F statistic
