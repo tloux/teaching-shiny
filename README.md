@@ -1,4 +1,4 @@
-# shiny-teaching
+# Shiny Apps for Statistics Education
 
 Below are descriptions of all the apps available in this repo, sorted by topic.
 
