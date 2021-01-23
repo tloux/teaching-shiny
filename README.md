@@ -43,3 +43,6 @@ Allows the user to set the between-group sum of squares (SSB) and within-group s
 
 **regression-residuals**  
 Displays a scatterplot of data simulated from a linear model along with a histogram contrasting the distribution of the *y* variable (grey) to the distribution of the residuals within an window around the specified *x* coordinate (light blue).
+
+**leverage**  
+Displays a scatterplot with regression line. The user can select the point with the median x value or the outlier and adjust the y value of the point. The regression line will update to show the changes (influence) the point can have.
