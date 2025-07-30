@@ -5,11 +5,11 @@ Below are descriptions of all the apps available in this repo, sorted by topic.
 
 ## Probability
 
-**diagnostic-tests**  
-Displays a scatterplot comparing healthy and sick patients on a hypothetical biomarker and allows the user to select the diagnostic cutoff for the biomarker expression. The output includes an ROC curve with the sensitivity and specificity for the chosen cutoff marked.
-
 **bayes-theorem**  
 Gives a mosaic representation of Bayes' Theorem in the context of a disease/screening test example. Users can input the prevalence of disease in the population (x-axis), sensitivity (left bar), and specificity (right bar). The positive predictive probability is given in the plot's title, calculated from the input parameters.
+
+**roc-curves**  
+Displays a scatterplot comparing healthy and sick patients on a hypothetical biomarker and allows the user to select the diagnostic cutoff for the biomarker expression. The output includes an ROC curve with the sensitivity and specificity for the chosen cutoff marked.
 
 
 ## Probability Distributions
